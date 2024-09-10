@@ -38,10 +38,17 @@ class PlayerResponse {
     final availableAudioFormats =
         (json["streamingData"]["adaptiveFormats"] as List)
             .where((item) => item['mimeType'].contains("audio"));
+    dynamic gain;
+    try {
+      final config = json["playerConfig"]["audioConfig"];
+      gain = config["perceptualLoudnessDb"];
+    } catch (e) {}
+
     return PlayerResponse(
         playable: isplayable,
-        audioFormats:
-            availableAudioFormats.map((item) => Audio.fromJson(item)).toList());
+        audioFormats: availableAudioFormats
+            .map((item) => Audio.fromJson(item, gain))
+            .toList());
   }
 
   Audio get highestBitrateAudio => sortByBitrate[0];
@@ -83,6 +90,7 @@ class Audio {
   final int bitrate;
   final int duration;
   final int size;
+  final double gain;
   final double loudnessDb;
   final String url;
   Audio(
@@ -91,10 +99,11 @@ class Audio {
       required this.bitrate,
       required this.duration,
       required this.loudnessDb,
+      required this.gain,
       required this.url,
       required this.size});
 
-  factory Audio.fromJson(json) => Audio(
+  factory Audio.fromJson(json, gain) => Audio(
       audioCodec: (json["mimeType"] as String).contains("mp4a")
           ? Codec.mp4a
           : Codec.opus,
@@ -103,7 +112,8 @@ class Audio {
       bitrate: json["bitrate"] ?? 0,
       loudnessDb: (json['loudnessDb'])?.toDouble() ?? 0.0,
       url: json['url'],
-      size: int.tryParse(json["contentLength"]) ?? 0);
+      size: int.tryParse(json["contentLength"]) ?? 0,
+      gain: gain ?? -13.0 - (json['loudnessDb'])?.toDouble() ?? 0.0);
 
   Map<String, dynamic> toJson() => {
         "itag": itag,
@@ -112,7 +122,8 @@ class Audio {
         "loudnessDb": loudnessDb,
         "url": url,
         "approxDurationMs": duration,
-        "size": size
+        "size": size,
+        "gain": gain
       };
 }
 
