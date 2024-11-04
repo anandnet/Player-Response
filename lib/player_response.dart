@@ -15,6 +15,12 @@ class PlayerResponse {
     final url = getUrl(option);
     final body = getBody(option);
     body['videoId'] = videoId;
+    
+    if(retry == 1) {
+      body['contentCheckOk'] = true;
+      body['racyCheckOk'] = true;
+    }
+
     try {
       final response = (await Dio().post(url,
           options: Options(
